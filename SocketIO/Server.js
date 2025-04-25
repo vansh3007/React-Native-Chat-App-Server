@@ -1,4 +1,3 @@
-// SocketIO/Server.js
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -14,22 +13,20 @@ const io = new Server(server, {
   },
 });
 
-// Socket User Mapping
 const users = new Map();
-
-export const getReceiverSocketId = (receiverId) => {
-  console.log(users);
-  console.log("Receiver ID:", receiverId);
-  console.log("Socket ID:", users.get(receiverId?.toString()));
-  return users.get(receiverId?.toString());
-};
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  console.log("User connected:", userId, socket.id);
+
   if (userId) {
     users.set(userId.toString(), socket.id);
+    socket.join(userId.toString());
   }
+
+  socket.on("joinRoom", ({ senderId, receiverId }) => {
+    const roomId = [senderId, receiverId].sort().join("_");
+    socket.join(roomId);
+  });
 
   socket.on("disconnect", () => {
     for (let [id, sid] of users.entries()) {
